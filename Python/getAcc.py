@@ -1,0 +1,39 @@
+import smbus
+import time
+
+# Get I2C bus
+bus = smbus.SMBus(1)
+
+# MMA7660FC address, 0x4C(76)
+# Select mode register, 0x07(07)
+#		0x01(01)	Active mode
+bus.write_byte_data(0x4C, 0x07, 0x01)
+# MMA7660FC address, 0x4C(76)
+# Select sample rate register, 0x08(08)
+#		0x07(07)	1 Sample/second active
+bus.write_byte_data(0x4C, 0x08, 0x07)
+
+time.sleep(0.5)
+
+# MMA7660FC address, 0x4C
+# Read data back from 0x00, 3 bytes
+# X-Axis Accl, Y-Axis Accl, Z-Axis Accl
+data=bus.read_i2c_block_data(0x4C, 0x00, 3)
+
+# Convert the data to 6-bits
+xAccl = data[0] & 0x3F
+if xAccl > 31:
+    xAccl -= 64
+
+yAccl = data[1] & 0x3F
+if yAccl > 31:
+    yAccl -= 64
+
+zAccl = data[2] & 0x3F
+if zAccl > 31:
+    zAccl -= 64
+
+# Output data to screen
+print("Acceleration in X-Axis : %d" %xAccl)
+print("Acceleration in Y-Axis : %d" %yAccl)
+print("Acceleration in Z-Axis : %d" %zAccl)
