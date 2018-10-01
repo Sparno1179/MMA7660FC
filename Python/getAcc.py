@@ -1,26 +1,25 @@
 import smbus
 import time
 
-# Get I2C bus
+# I2Cバスの取得
 bus = smbus.SMBus(1)
 
-# MMA7660FC address, 0x4C(76)
-# Select mode register, 0x07(07)
-#		0x01(01)	Active mode
+# MMA7660FCのアドレス: 0x4C(76)
+# モードレジスタの選択:  0x07(07)
+# 0x01(01): Active mode
 bus.write_byte_data(0x4C, 0x07, 0x01)
-# MMA7660FC address, 0x4C(76)
-# Select sample rate register, 0x08(08)
-#		0x07(07)	1 Sample/second active
+
+# サンプルレートレジスタの選択: 0x08(08)
+# 0x07(07): 1 Sample/second active
 bus.write_byte_data(0x4C, 0x08, 0x07)
 
 time.sleep(0.5)
 
-# MMA7660FC address, 0x4C
-# Read data back from 0x00, 3 bytes
+# MMA7660FCの0x00番地から3バイト分取得。1バイトずつ加速度が格納されている
 # X-Axis Accl, Y-Axis Accl, Z-Axis Accl
 data=bus.read_i2c_block_data(0x4C, 0x00, 3)
 
-# Convert the data to 6-bits
+# 0~63を、-32~31に変換。
 xAccl = data[0] & 0x3F
 if xAccl > 31:
     xAccl -= 64
@@ -33,7 +32,5 @@ zAccl = data[2] & 0x3F
 if zAccl > 31:
     zAccl -= 64
 
-# Output data to screen
-print("Acceleration in X-Axis : %d" %xAccl)
-print("Acceleration in Y-Axis : %d" %yAccl)
-print("Acceleration in Z-Axis : %d" %zAccl)
+# 結果出力
+print("Acceleration = (%d, %d, %d",  (xAccl, yAccl, zAccl))
