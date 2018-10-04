@@ -42,29 +42,29 @@ void main()
 	}
 	else
 	{
-		// Convert the data to 6-bits
-		int xAccl = data[0] & 0x3F;
-		if(xAccl > 31)
+		for(int i=0; i < 100; i++)
 		{
-			xAccl -= 64;
-		}
+			// Convert the data to 6-bits
+			int xAccl = data[0] & 0x3F;
+			if(xAccl > 31)
+			{
+				xAccl -= 64;
+			}
 
-		int yAccl = data[1] & 0x3F;;
-		if(yAccl > 31)
-		{
-			yAccl -= 64;
-		}
+			int yAccl = data[1] & 0x3F;;
+			if(yAccl > 31)
+			{
+				yAccl -= 64;
+			}
 
-		int zAccl = data[2] & 0x3F;;
-		if(zAccl > 31)
-		asj
-		{
-			zAccl -= 64;
-		}
+			int zAccl = data[2] & 0x3F;;
+			if(zAccl > 31)
+			{
+				zAccl -= 64;
+			}
 
-		// Output data to screen
-		printf("Acceleration in X-Axis : %d \n", xAccl);
-		printf("Acceleration in Y-Axis : %d \n", yAccl);
-		printf("Acceleration in Z-Axis : %d \n", zAccl);
+			// Output data to screen
+			printf("Acc = (%2d, %2d, %2d)", xAccl, yAccl, zAccl);
+		}
 	}
 }
