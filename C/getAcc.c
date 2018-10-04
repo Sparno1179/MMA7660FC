@@ -9,11 +9,11 @@
 #define MILLI_SEC 1000000
 #define SEC 1000000000
 
-typedef struct {
+typedef struct accl_data {
 	int x;
 	int y;
 	int z;
-} accl_data;
+} accl;
 
 int read(int handle, void *buf, unsigned n);
 int write(int handle, void *buf, unsigned n);
@@ -57,8 +57,18 @@ void main()
 	// nanosleep用構造体
 	struct timespec req = {0, 0.015625 * SEC};
 
+	// データ保存用ファイルポインタ
+	FILE *fp;
+
+	if( (fp = fopen("acclCSVtest.csv", "w" )) == NULL ) {
+        printf( "結果ファイルがオープンできませんでした\n" );
+        exit( 1 );
+    }
+	// ヘッダ行を出力する
+    fprintf( fp, "x,y,z\n" );
+
 	// 加速度取得・出力ループ
-	for(int i=0; i < 640; i++)
+	for(int i=0; i < 320; i++)
 	{
 		// 先頭3バイトを読み込む
 		// xAccl, yAccl, zAccl
@@ -71,21 +81,32 @@ void main()
 		}
 		else
 		{
+			// データ保存用構造体
+			struct accl_data accl;
+
 			// データを-32~31に変換
 			int xAccl = data[0] & 0x3F;
 			if(xAccl > 31) xAccl -= 64;
+			accl.x = xAccl;
 
 			int yAccl = data[1] & 0x3F;;
 			if(yAccl > 31) yAccl -= 64;
+			accl.y = yAccl;
 
 			int zAccl = data[2] & 0x3F;;
 			if(zAccl > 31) zAccl -= 64;
+			accl.z = zAccl;
 
-			// 出力
-			printf("Acc = (%2d, %2d, %2d)\n", xAccl, yAccl, zAccl);
+			// 画面出力
+			printf("Acc = (%2d, %2d, %2d)\n", accl.x, accl.y, accl.z);
+			// CSV出力
+			fprintf(fp, "%d,%d,%d\n", accl.x, accl.y, accl.z);
 			// 待つ
 			nanosleep(&req, NULL);
 		}
 	}
+	// ファイルのクローズ
+	fclose(fp);
+	printf("クローズ\n");
 	
 }
