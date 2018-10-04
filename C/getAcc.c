@@ -2,7 +2,23 @@
 #include <stdlib.h>
 #include <linux/i2c-dev.h>
 #include <sys/ioctl.h>
+#include <sys/time.h>
 #include <fcntl.h>
+
+#define MICRO_SEC 1000
+#define MILLI_SEC 1000000
+#define SEC 1000000000
+
+typedef struct {
+	int x;
+	int y;
+	int z;
+} accl_data;
+
+int read(int handle, void *buf, unsigned n);
+int write(int handle, void *buf, unsigned n);
+unsigned int sleep(unsigned int second);
+int nanosleep(const struct timespec *req, struct timespec *rem);
 
 void main() 
 {
@@ -16,55 +32,60 @@ void main()
 	}
 	// I2Cデバイスの取得, MMA7660FCのアドレスは0x4C(76)
 	ioctl(file, I2C_SLAVE, 0x4C);
+	char config[ 2] = {0};
+
+	// モードレジスタを選択(0x07)
+	// スタンバイモードに書き換え(0x00)
+	config[0] = 0x07;
+	config[1] = 0x00;
+	write(file, config, 2);
+	sleep(1);
 
 	// サンプリングレートレジスタ(0x08)の書き換え
-	// 1 Sample/second(0x07)
-	char config[2] = {0};
+	// 64 Sample/second(0x01)
 	config[0] = 0x08;
-	config[1] = 0x07;
+	config[1] = 0x01;
 	write(file, config, 2);
 
-	// Select mode register(0x07)
-	// Active mode(0x01)
+	// モードレジスタを選択(0x07)
+	// アクティブモードに書き換え(0x01)
 	config[0] = 0x07;
 	config[1] = 0x01;
 	write(file, config, 2);
 	sleep(1);
 
-	// Read 3 bytes of data
-	// xAccl, yAccl, zAccl
-	char reg[1] = {0x00};
-	write(file, reg, 1);
-	char data[3] = {0};
-	if(read(file, data, 3) != 3)
+	// nanosleep用構造体
+	struct timespec req = {0, 0.015625 * SEC};
+
+	// 加速度取得・出力ループ
+	for(int i=0; i < 640; i++)
 	{
-		printf("Error : Input/output Error \n");
-	}
-	else
-	{
-		for(int i=0; i < 100; i++)
+		// 先頭3バイトを読み込む
+		// xAccl, yAccl, zAccl
+		char reg[1] = {0x00};
+		write(file, reg, 1);
+		char data[3] = {0};
+		if(read(file, data, 3) != 3)
 		{
-			// Convert the data to 6-bits
+			printf("Error : Input/output Error \n");
+		}
+		else
+		{
+			// データを-32~31に変換
 			int xAccl = data[0] & 0x3F;
-			if(xAccl > 31)
-			{
-				xAccl -= 64;
-			}
+			if(xAccl > 31) xAccl -= 64;
 
 			int yAccl = data[1] & 0x3F;;
-			if(yAccl > 31)
-			{
-				yAccl -= 64;
-			}
+			if(yAccl > 31) yAccl -= 64;
 
 			int zAccl = data[2] & 0x3F;;
-			if(zAccl > 31)
-			{
-				zAccl -= 64;
-			}
+			if(zAccl > 31) zAccl -= 64;
 
-			// Output data to screen
-			printf("Acc = (%2d, %2d, %2d)", xAccl, yAccl, zAccl);
+			// 出力
+			printf("Acc = (%2d, %2d, %2d)\n", xAccl, yAccl, zAccl);
+			// 待つ
+			nanosleep(&req, NULL);
 		}
 	}
+	
 }
